@@ -1,0 +1,68 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<style>
+    .message-wrapper {
+        height: 460px;
+        overflow-y: scroll;
+    }
+</style>
+
+<div class="d-flex flex-column h-100">
+    <div class="message-wrapper">
+        <ul id="message-list"></ul>
+    </div>
+    <form>
+        <table>
+            <tr>
+                <td class="pe-2">Name</td>
+                <td>
+                    <input id="name" class="form-control" />
+                </td>
+            </tr>
+            <tr>
+                <td class="pe-2">Message</td>
+                <td>
+                    <input id="message" class="form-control" />
+                </td>
+            </tr>
+            <tr>
+                <td></td>
+                <td class="d-flex justify-content-end">
+                    <a id="btn-send" class="btn btn-primary mt-2 px-4">Send</a>
+                </td>
+            </tr>
+        </table>
+    </form>
+</div>
+<script src="~/js/signalr/dist/browser/signalr.js"></script>
+<script src="~/lib/jquery/dist/jquery.js"></script>
+
+<script>
+    var connection = new signalR.HubConnectionBuilder().withUrl("/chatHub").build();
+
+    $("#btn-send").prop("disabled", true)
+
+    connection.on("ReceiveMessage", function (user, message) {
+        if (!user || !message) return;
+        var li = document.createElement("li");
+        li.textContent = `${user}: ${message}`;
+        $("#message-list").append(li);
+    });
+
+    connection.start().then(function () {
+        $("#btn-send").prop("disabled", false)
+    }).catch(function (err) {
+        return console.error(err.toString());
+    });
+
+    $("#btn-send").on("click", function (event) {
+        var user = $("#name").val();
+        var message = $("#message").val();
+        connection.invoke("SendMessage", user, message).catch(function (err) {
+            return console.error(err.toString());
+        });
+        event.preventDefault();
+    });
+</script>
